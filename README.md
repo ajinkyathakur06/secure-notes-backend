@@ -21,7 +21,7 @@ A backend service for a **Secure Notes & File Sharing application** built using 
 ## 🧱 Tech Stack
 
 - **Framework:** NestJS
-- **Database:** PostgreSQL (Production), SQLite (Local)
+- **Database:** PostgreSQL
 - **ORM:** Prisma
 - **Authentication:** JWT
 - **File Upload:** Multer
