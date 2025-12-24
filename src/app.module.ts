@@ -7,12 +7,16 @@ import { ConfigModule } from '@nestjs/config';
 import { NotesModule } from './notes/notes.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule,
-     ConfigModule.forRoot({
+  imports: [
+    ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '.env',
     }),
-     NotesModule,],
+    PrismaModule,
+    AuthModule,
+    NotesModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

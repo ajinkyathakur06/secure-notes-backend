@@ -4,24 +4,26 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import 'dotenv/config';
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit,OnModuleDestroy {
-  
+export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
 
-    constructor(){
-          console.log('DB URL:', process.env.DATABASE_URL);
-          const databaseUrl = process.env.DATABASE_URL;
+    constructor() {
+        const databaseUrl = process.env.DATABASE_URL;
 
-    if (!databaseUrl) {
-      throw new Error('DATABASE_URL is not defined');
-    }
-        const adapter=new PrismaPg({
-            connectionString:process.env.DATABASE_URL as string,
+        if (!databaseUrl) {
+            throw new Error('DATABASE_URL is not defined');
+        }
+
+        const adapter = new PrismaPg({
+            connectionString: databaseUrl,
         });
-        super({adapter});
+
+        super({ adapter });
     }
+
     async onModuleInit() {
         await this.$connect();
     }
+
     async onModuleDestroy() {
         await this.$disconnect();
     }
