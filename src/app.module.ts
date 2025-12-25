@@ -6,14 +6,16 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user/user.module';
 import { NotesModule } from './notes/notes.module';
+import { ShareModule } from './share/share.module';
 
 @Module({
   imports: [PrismaModule, AuthModule,
      ConfigModule.forRoot({
       isGlobal: true,
     }),
-     UserModule,],
-     NotesModule,],
+     UserModule,
+     NotesModule,
+     ShareModule],
   controllers: [AppController],
   providers: [AppService],
 })
