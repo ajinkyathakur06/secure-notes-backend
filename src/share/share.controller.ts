@@ -22,26 +22,31 @@ export class ShareController {
 
   @Post()
   createShare(@Req() req, @Body() dto: CreateShareDto) {
-    return this.shareService.createShare(req.user.id, dto);
+    return this.shareService.createShare(req.user.userId, dto);
   }
 
   @Get('requests')
   getRequests(@Req() req) {
-    return this.shareService.getPendingRequests(req.user.id);
+    return this.shareService.getPendingRequests(req.user.userId);
   }
 
   @Post('respond')
   respond(@Req() req, @Body() dto: RespondShareDto) {
-    return this.shareService.respondToRequest(req.user.id, dto);
+    return this.shareService.respondToRequest(req.user.userId, dto);
   }
 
   @Patch('permission')
   updatePermission(@Req() req, @Body() dto: UpdatePermissionDto) {
-    return this.shareService.updatePermission(req.user.id, dto);
+    return this.shareService.updatePermission(req.user.userId, dto);
+  }
+
+  @Get('notes')
+  getSharedNotes(@Req() req ){
+    return this.shareService.getSharedNotes(req.user.userId);
   }
 
   @Delete('revoke/:noteId/:userId')
   revoke(@Req() req, @Param() params) {
-    return this.shareService.revokeAccess(req.user.id, params);
+    return this.shareService.revokeAccess(req.user.userId, params);
   }
 }

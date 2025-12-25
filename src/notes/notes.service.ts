@@ -5,9 +5,7 @@ import { UpdateNoteDto } from './dto/update_note.dto';
 
 @Injectable()
 export class NotesService {
-    getSharedNotes(userId: any) {
-        throw new Error('Method not implemented.');
-    }
+   
     async getOwnedNotes(userId: string) {
         return await this.prisma.notes.findMany({
             where:{
@@ -87,12 +85,73 @@ export class NotesService {
                 user_id:userId,
                 note_id:noteId,
                 is_deleted:true,
+                deletedAt:new Date(),
+                
+
             },
             update: {
                 is_deleted:true,
+                deletedAt:new Date(),
             }
         });
     }
+
+ //trash
+ async getTrash(userId: string) {
+  const sevenDaysAgo = new Date(
+    Date.now() - 7 * 24 * 60 * 60 * 1000,
+  );
+
+  return this.prisma.userNoteMeta.findMany({
+    where: {
+      user_id: userId,
+      is_deleted: true,
+      deletedAt: {
+        gte: sevenDaysAgo,
+      },
+    },
+    include: {
+      note: {
+        select: {
+          note_id: true,
+          title: true,
+          updatedAt: true,
+        },
+      },
+    },
+    orderBy: {
+      deletedAt: 'desc',
+    },
+  });
+}
+//restore
+async restore(noteId: string, userId: string) {
+  const meta = await this.prisma.userNoteMeta.findUnique({
+    where: {
+      user_id_note_id: {
+        user_id: userId,
+        note_id: noteId,
+      },
+    },
+  });
+
+  if (!meta || !meta.is_deleted) {
+    throw new NotFoundException('Note not in trash');
+  }
+
+  return this.prisma.userNoteMeta.update({
+    where: {
+      user_id_note_id: {
+        user_id: userId,
+        note_id: noteId,
+      },
+    },
+    data: {
+      is_deleted: false,
+      deletedAt: null,
+    },
+  });
+}
 
 
     //get note

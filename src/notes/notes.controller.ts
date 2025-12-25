@@ -24,10 +24,13 @@ export class NotesController {
         return this.noteService.getOwnedNotes(req.user.userId);
     }
 
-    //Get Shared notes
-    getSharedNotes(@Req() req){
-        return this.noteService.getSharedNotes(req.user.userId);
+    //get trash notes
+    @Get('trash')
+        getTrash(@Req() req) {
+        return this.noteService.getTrash(req.user.userId);
     }
+
+   
     //Get note by ID
     @Get(':noteId')
     getOne(@Req() req,@Param('noteId') noteId:string){
@@ -43,6 +46,15 @@ export class NotesController {
     ){
         return this.noteService.update(noteId,req.user.userId,dto);
     }
+
+    //restore 
+    @Patch(':noteId/restore')
+restore(
+  @Req() req,
+  @Param('noteId') noteId: string,
+) {
+  return this.noteService.restore(noteId, req.user.userId);
+}
 
     //Delete note
     //scope=me delete for current user
