@@ -12,7 +12,7 @@ import { NotesModule } from './notes/notes.module';
      ConfigModule.forRoot({
       isGlobal: true,
     }),
-     UserModule,],
+     UserModule,
      NotesModule,],
   controllers: [AppController],
   providers: [AppService],

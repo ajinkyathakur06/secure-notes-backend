@@ -100,6 +100,8 @@ model UserNoteMeta {
   note_id  String
   is_deleted Boolean @default(false)
 
+  deletedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
