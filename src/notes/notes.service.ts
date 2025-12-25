@@ -5,9 +5,7 @@ import { UpdateNoteDto } from './dto/update_note.dto';
 
 @Injectable()
 export class NotesService {
-    getSharedNotes(userId: any) {
-        throw new Error('Method not implemented.');
-    }
+   
     async getOwnedNotes(userId: string) {
         return await this.prisma.notes.findMany({
             where:{

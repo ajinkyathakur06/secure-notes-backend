@@ -30,10 +30,7 @@ export class NotesController {
         return this.noteService.getTrash(req.user.userId);
     }
 
-    //Get Shared notes
-    getSharedNotes(@Req() req){
-        return this.noteService.getSharedNotes(req.user.userId);
-    }
+   
     //Get note by ID
     @Get(':noteId')
     getOne(@Req() req,@Param('noteId') noteId:string){
