@@ -4,6 +4,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -86,6 +87,25 @@ export class AuthService {
       },
     };
     }
+
+      async resetPassword(userId: string, dto: ResetPasswordDto) {
+    const { password, confirmPassword } = dto;
+
+    if (password !== confirmPassword) {
+      throw new BadRequestException('Passwords do not match');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await this.prisma.user.update({
+      where: { user_id: userId },
+      data: { password: hashedPassword },
+    });
+
+    return {
+      message: 'Password updated successfully',
+    };
+  }
     }
 
 
