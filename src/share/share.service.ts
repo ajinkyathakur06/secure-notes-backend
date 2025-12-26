@@ -160,6 +160,7 @@ export class ShareService {
       select: {
         note_id: true,
         title: true,
+        content:true,
         updatedAt: true,
         user_id: true, // owner
       },

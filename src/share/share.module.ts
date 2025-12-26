@@ -7,5 +7,6 @@ import { PrismaModule } from '../prisma/prisma.module';
   imports: [PrismaModule],
   controllers: [ShareController],
   providers: [ShareService],
+  exports:[ShareService],
 })
 export class ShareModule {}

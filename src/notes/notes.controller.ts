@@ -23,6 +23,11 @@ export class NotesController {
     getOwnedNotes(@Req() req){
         return this.noteService.getOwnedNotes(req.user.userId);
     }
+ //Get all notes
+ @Get('all')
+getAllNotes(@Req() req) {
+  return this.noteService.getAllNotes(req.user.userId);
+}
 
     //get trash notes
     @Get('trash')
