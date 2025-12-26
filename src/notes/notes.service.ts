@@ -2,10 +2,14 @@ import {ForbiddenException, Injectable,NotFoundException } from '@nestjs/common'
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateNoteDto } from './dto/create_note.dto';
 import { UpdateNoteDto } from './dto/update_note.dto';
+import { ShareService } from 'src/share/share.service';
 
 @Injectable()
 export class NotesService {
-   
+   constructor(private readonly prisma:PrismaService,private readonly shareService:ShareService){
+
+    }
+   //For getting shared notes check ShareService
     async getOwnedNotes(userId: string) {
         return await this.prisma.notes.findMany({
             where:{
@@ -36,12 +40,52 @@ export class NotesService {
             select:{
                 note_id:true,
                 title:true,
+                content:true,
                 updatedAt:true,
             },
             
         });
        
     }
+
+    //get all notes
+    async getAllNotes(userId: string) {
+  const owned = await this.prisma.notes.findMany({
+    where: {
+      user_id: userId,
+      OR: [
+        {
+          noteMeta: {
+            none: { user_id: userId },
+          },
+        },
+        {
+          noteMeta: {
+            some: {
+              user_id: userId,
+              is_deleted: false,
+            },
+          },
+        },
+      ],
+    },
+    orderBy: { updatedAt: 'desc' },
+    select: {
+      note_id: true,
+      title: true,
+      content: true,
+      updatedAt: true,
+    },
+  });
+
+  const other = await this.shareService.getSharedNotes(userId);
+
+  return {
+    owned,
+    other,
+  };
+}
+
     //download as txt
     async download(noteId: string, userId: string) {
         const note = await this.getOne(noteId, userId);
@@ -234,9 +278,7 @@ async restore(noteId: string, userId: string) {
 
 
     }
-    constructor(private readonly prisma:PrismaService){
-
-    }
+    
 
     //Create Note
     async create(userId:string,dto:CreateNoteDto){
