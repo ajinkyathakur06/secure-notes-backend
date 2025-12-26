@@ -5,10 +5,109 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
+
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum RequestPermission {
+  READ_ONLY
+  EDIT
+}
+
+model User {
+  user_id    String   @id @default(uuid())
+  name       String
+  email      String   @unique
+  password   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  notesOwned     Notes[]
+  sentRequests   Request[] @relation("SentRequests")
+  receivedReqs   Request[] @relation("ReceivedRequests")
+  bookmarks      Bookmark[]
+  noteMeta       UserNoteMeta[]
+}
+
+model Notes {
+  note_id   String   @id @default(uuid())
+  user_id   String
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  owner     User      @relation(fields: [user_id], references: [user_id])
+  requests  Request[]
+  bookmarks Bookmark[]
+  noteMeta  UserNoteMeta[]
+}
+
+model Request {
+  request_id String @id @default(uuid())
+  note_id    String
+  sender_id  String
+  receiver_id String
+
+  permission RequestPermission
+  status     RequestStatus
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  note     Notes @relation(fields: [note_id], references: [note_id])
+  sender   User  @relation("SentRequests", fields: [sender_id], references: [user_id])
+  receiver User  @relation("ReceivedRequests", fields: [receiver_id], references: [user_id])
+
+  @@unique([note_id, receiver_id])
+}
+
+model Bookmark {
+  bookmark_id String @id @default(uuid())
+  user_id     String
+  note_id     String
+  label       String
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User  @relation(fields: [user_id], references: [user_id])
+  note Notes @relation(fields: [note_id], references: [note_id])
+
+  @@unique([user_id, note_id])
+}
+
+model UserNoteMeta {
+  meta_id  String @id @default(uuid())
+  user_id  String
+  note_id  String
+  is_deleted Boolean @default(false)
+
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User  @relation(fields: [user_id], references: [user_id])
+  note Notes @relation(fields: [note_id], references: [note_id])
+  
+  @@unique([user_id, note_id])
 }
