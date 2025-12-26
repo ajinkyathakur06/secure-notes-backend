@@ -10,27 +10,46 @@ export class ShareService {
 
   // 1️⃣ Create share request
   async createShare(ownerId: string, dto: CreateShareDto) {
-    const note = await this.prisma.notes.findFirst({
-      where: {
-        note_id: dto.noteId,
-        user_id: ownerId,
-      },
-    });
+  // 1️⃣ Verify note owner
+  const note = await this.prisma.notes.findFirst({
+    where: {
+      note_id: dto.noteId,
+      user_id: ownerId,
+    },
+  });
 
-    if (!note) {
-      throw new ForbiddenException('Not note owner');
-    }
-
-    return this.prisma.request.create({
-      data: {
-        note_id: dto.noteId,
-        sender_id: ownerId,
-        receiver_id: dto.receiverId,
-        permission: dto.permission,
-        status: 'PENDING',
-      },
-    });
+  if (!note) {
+    throw new ForbiddenException('Not note owner');
   }
+
+  // 2️⃣ Find receiver by email
+  const receiver = await this.prisma.user.findUnique({
+    where: {
+      email: dto.receiverEmail,
+    },
+  });
+
+  if (!receiver) {
+    throw new ForbiddenException('User with this email does not exist');
+  }
+
+  // 3️⃣ Prevent self-share
+  if (receiver.user_id === ownerId) {
+    throw new ForbiddenException('Cannot share note with yourself');
+  }
+
+  // 4️⃣ Create share request
+  return this.prisma.request.create({
+    data: {
+      note_id: dto.noteId,
+      sender_id: ownerId,
+      receiver_id: receiver.user_id,
+      permission: dto.permission,
+      status: 'PENDING',
+    },
+  });
+  }
+
 
   // 2️⃣ Get pending requests
   async getPendingRequests(userId: string) {
