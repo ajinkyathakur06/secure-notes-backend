@@ -1,11 +1,11 @@
-import { IsEnum, IsUUID } from 'class-validator';
+import { IsEnum, IsString, IsUUID } from 'class-validator';
 
 export class CreateShareDto {
   @IsUUID()
   noteId: string;
 
-  @IsUUID()
-  receiverId: string;
+  @IsString()
+  receiverEmail: string;
 
   @IsEnum(['READ_ONLY', 'EDIT'])
   permission: 'READ_ONLY' | 'EDIT';

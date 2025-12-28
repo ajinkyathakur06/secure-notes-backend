@@ -21,11 +21,25 @@ export class ShareService {
       throw new ForbiddenException('Not note owner');
     }
 
+    const receiver = await this.prisma.user.findUnique({
+  where: {
+    email: dto.receiverEmail,
+  },
+});
+
+if (!receiver) {
+  throw new ForbiddenException('Receiver not found');
+}
+
+if (receiver.user_id === ownerId) {
+  throw new ForbiddenException('Cannot share note with yourself');
+}
+
     return this.prisma.request.create({
       data: {
         note_id: dto.noteId,
         sender_id: ownerId,
-        receiver_id: dto.receiverId,
+        receiver_id: receiver.user_id,
         permission: dto.permission,
         status: 'PENDING',
       },
