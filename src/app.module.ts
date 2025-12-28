@@ -6,13 +6,19 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { ExtractorModule } from './extractor/extractor.module';
 
+import { UserModule } from './user/user.module';
+import { NotesModule } from './notes/notes.module';
+import { ShareModule } from './share/share.module';
 
 @Module({
   imports: [PrismaModule,
      ConfigModule.forRoot({
       isGlobal: true,
     }),
-     ExtractorModule,],
+     ExtractorModule,
+     UserModule,
+     NotesModule,
+     ShareModule],
   controllers: [AppController],
   providers: [AppService],
 })
