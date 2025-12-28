@@ -6,7 +6,7 @@ import { UpdatePermissionDto } from './dto/update-permission.dto';
 
 @Injectable()
 export class ShareService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   // 1️⃣ Create share request
   async createShare(ownerId: string, dto: CreateShareDto) {
@@ -22,18 +22,18 @@ export class ShareService {
     }
 
     const receiver = await this.prisma.user.findUnique({
-  where: {
-    email: dto.receiverEmail,
-  },
-});
+      where: {
+        email: dto.receiverEmail,
+      },
+    });
 
-if (!receiver) {
-  throw new ForbiddenException('Receiver not found');
-}
+    if (!receiver) {
+      throw new ForbiddenException('Receiver not found');
+    }
 
-if (receiver.user_id === ownerId) {
-  throw new ForbiddenException('Cannot share note with yourself');
-}
+    if (receiver.user_id === ownerId) {
+      throw new ForbiddenException('Cannot share note with yourself');
+    }
 
     return this.prisma.request.create({
       data: {
@@ -46,12 +46,11 @@ if (receiver.user_id === ownerId) {
     });
   }
 
-  // 2️⃣ Get pending requests
-  async getPendingRequests(userId: string) {
+  // 2️⃣ Get all requests (Pending, Accepted, Rejected)
+  async getRequests(userId: string) {
     return this.prisma.request.findMany({
       where: {
         receiver_id: userId,
-        status: 'PENDING',
       },
       include: {
         note: {
@@ -99,30 +98,30 @@ if (receiver.user_id === ownerId) {
 
   // 4️⃣ Update permission (owner only)
   async updatePermission(ownerId: string, dto: UpdatePermissionDto) {
-      // 1️⃣ Verify owner
-      const note = await this.prisma.notes.findFirst({
-        where: {
-          note_id: dto.noteId,
-          user_id: ownerId,
-        },
-      });
-  
-      if (!note) {
-        throw new ForbiddenException('Only owner can update permission');
-      }
-  
-      // 2️⃣ Update permission in REQUEST (source of truth)
-      return this.prisma.request.updateMany({
-        where: {
-          note_id: dto.noteId,
-          receiver_id: dto.userId,
-          status: 'ACCEPTED',
-        },
-        data: {
-          permission: dto.permission,
-        },
-      });
+    // 1️⃣ Verify owner
+    const note = await this.prisma.notes.findFirst({
+      where: {
+        note_id: dto.noteId,
+        user_id: ownerId,
+      },
+    });
+
+    if (!note) {
+      throw new ForbiddenException('Only owner can update permission');
     }
+
+    // 2️⃣ Update permission in REQUEST (source of truth)
+    return this.prisma.request.updateMany({
+      where: {
+        note_id: dto.noteId,
+        receiver_id: dto.userId,
+        status: 'ACCEPTED',
+      },
+      data: {
+        permission: dto.permission,
+      },
+    });
+  }
 
 
   // 5️⃣ Revoke access
@@ -174,9 +173,9 @@ if (receiver.user_id === ownerId) {
       select: {
         note_id: true,
         title: true,
-        content:true,
+        content: true,
         updatedAt: true,
-        user_id: true, // owner
+        user_id: true,
       },
     });
   }

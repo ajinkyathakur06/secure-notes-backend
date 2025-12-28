@@ -18,7 +18,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 @Controller('share')
 @UseGuards(JwtAuthGuard)
 export class ShareController {
-  constructor(private readonly shareService: ShareService) {}
+  constructor(private readonly shareService: ShareService) { }
 
   @Post()
   createShare(@Req() req, @Body() dto: CreateShareDto) {
@@ -27,7 +27,7 @@ export class ShareController {
 
   @Get('requests')
   getRequests(@Req() req) {
-    return this.shareService.getPendingRequests(req.user.userId);
+    return this.shareService.getRequests(req.user.userId);
   }
 
   @Post('respond')
@@ -41,7 +41,7 @@ export class ShareController {
   }
 
   @Get('notes')
-  getSharedNotes(@Req() req ){
+  getSharedNotes(@Req() req) {
     return this.shareService.getSharedNotes(req.user.userId);
   }
 
