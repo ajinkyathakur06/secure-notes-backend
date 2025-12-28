@@ -16,6 +16,7 @@ import { ShareModule } from './share/share.module';
       isGlobal: true,
     }),
      ExtractorModule,
+     AuthModule,
      UserModule,
      NotesModule,
      ShareModule],
