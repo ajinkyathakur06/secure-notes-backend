@@ -176,6 +176,15 @@ export class ShareService {
         content: true,
         updatedAt: true,
         user_id: true,
+        requests: {
+          where: {
+            receiver_id: userId,
+            status: 'ACCEPTED',
+          },
+          select: {
+            permission: true,
+          },
+        },
       },
     });
   }
