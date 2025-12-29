@@ -112,6 +112,16 @@ export class NotesService {
       if (note.user_id !== userId) {
         throw new ForbiddenException('Only owner can delete note for everyone',);
       }
+
+         await this.prisma.request.deleteMany({
+         where: { note_id: noteId },
+        });
+
+    // Delete userNoteMeta
+      await this.prisma.userNoteMeta.deleteMany({
+        where: { note_id: noteId },
+        });
+   
       return this.prisma.notes.delete({
         where: { note_id: noteId },
       });
