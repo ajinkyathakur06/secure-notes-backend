@@ -7,9 +7,8 @@ import { defineConfig } from "prisma/config";
 export default defineConfig({
   schema: "prisma/schema.prisma",
   datasource: {
-    // url: process.env["DATABASE_URL"],
-    // shadowDatabaseUrl: process.env["SHADOW_DATABASE_URL"]
-    url : "postgresql://admin_secure_user:inpinite_sols@localhost:5432/secure_notes",
-    shadowDatabaseUrl : "postgresql://admin_secure_user:inpinite_sols@localhost:5432/secure_notes_shadow"
+    url: process.env["DATABASE_URL"],
+    shadowDatabaseUrl: process.env["SHADOW_DATABASE_URL"]
+   
   },
 });
