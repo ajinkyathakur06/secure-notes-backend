@@ -1,5 +1,5 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateNoteDto } from './dto/create_note.dto';
 import { UpdateNoteDto } from './dto/update_note.dto';
 import { ShareService } from '../share/share.service';
@@ -88,6 +88,9 @@ export class NotesService {
 
   //download as txt
   async download(noteId: string, userId: string) {
+    if (!noteId || !userId) {
+      throw new BadRequestException('Invalid request');
+    }
     const note = await this.getOne(noteId, userId);
 
     const text = `Title: ${note.title}\n\n${note.content}`;
@@ -97,27 +100,38 @@ export class NotesService {
       content: text,
     };
   }
+
   //delete note
   async delete(noteId: string, userId: string, scope: 'me' | 'all') {
-    const note = await this.prisma.notes.findUnique({
-      where: { note_id: noteId },
-    });
+    if (!noteId || !userId) {
+       throw new BadRequestException('Invalid request');
+    }
 
-    if (!note) {
-      throw new NotFoundException('Note not found');
+    if(scope!== 'me' && scope!=='all'){
+      throw new BadRequestException('Invalid delete scope');
     }
 
     //Owner can delete for  everyone
     if (scope === 'all') {
-      if (note.user_id !== userId) {
-        throw new ForbiddenException('Only owner can delete note for everyone',);
+        
+        const note=await this.prisma.notes.findFirst({
+        where:{
+          note_id:noteId,
+          user_id:userId, //this will fetch note only if user is owner
+        },
+      });
+
+      if(!note){
+        throw new ForbiddenException('Only owner can delete note for everyone!!');
       }
+
+      //delete for everyone with single query used cascade delete to delete related tables( from requests, usernotemeta)
       return this.prisma.notes.delete({
-        where: { note_id: noteId },
+        where:{note_id:noteId},
       });
     }
 
-    //delete for me owner or shared user
+    //delete for me owner or shared user (via usernotemeta table)
     return this.prisma.userNoteMeta.upsert({
       where: {
         user_id_note_id: {
@@ -170,6 +184,9 @@ export class NotesService {
   }
   //restore
   async restore(noteId: string, userId: string) {
+    if (!noteId || !userId) {
+      throw new BadRequestException('Invalid request');
+    }
     const meta = await this.prisma.userNoteMeta.findUnique({
       where: {
         user_id_note_id: {
@@ -198,15 +215,40 @@ export class NotesService {
   }
 
 
-  //get note
+  //get note (Get a single note by owner and the user who accepted the shared note)
   async getOne(noteId: string, userId: any) {
-    const note = await this.prisma.notes.findUnique({
-      where: { note_id: noteId },
+    if (!noteId || !userId) {
+  throw new BadRequestException('Invalid request');
+}
+    const note = await this.prisma.notes.findFirst({
+      where: { 
+        note_id: noteId,
+        OR:[
+          //owner can always access
+          {user_id:userId}, //for owner
+
+          //shared user with accepted access
+          {
+            requests:{
+              some:{
+                receiver_id:userId,
+                status:'ACCEPTED',
+              },
+            },
+          },
+
+        ],
+
+      },
+
+
       include: {
+        //check if user has deleted the note
         noteMeta: {
           where: { user_id: userId },
           select: { is_deleted: true },
         },
+        //Include sharing info
         requests: {
           include: {
             receiver: {
@@ -214,58 +256,68 @@ export class NotesService {
                 user_id: true,
                 name: true,
                 email: true,
-              }
-            }
-          }
-        }
+              },
+            },
+          },
+        },
       },
     });
 
-    //if note does not exist 
+    //if note does not exist or user has no access if checked for shared user
     if (!note) {
       throw new NotFoundException('Note not found ');
     }
 
-    //if user has deleted note
-    if (note.noteMeta.length && note.noteMeta[0].is_deleted) {
-      throw new NotFoundException('Note not found ');
+    //if user has deleted note or moved to trash
+    if (note.noteMeta?.[0]?.is_deleted) {
+      throw new NotFoundException('Note not found');
     }
 
-    //owner can view
-    if (note.user_id === userId) {
-      return note;
-    }
-
-    //check for shared access for not owner
-    const shared = await this.prisma.request.findFirst({
-      where: {
-        note_id: noteId,
-        receiver_id: userId,
-        status: 'ACCEPTED'
-      },
-    });
-    if (!shared) {
-      throw new ForbiddenException("You do not have access to this note");
-    }
+    //access granted user who not deleted note or owner with no deletion get the note
     return note;
   }
 
   //update
   async update(noteId: string, userId: any, dto: UpdateNoteDto) {
-    const note = await this.prisma.notes.findUnique({
-      where: { note_id: noteId },
-    });
-    if (!note) {
-      throw new NotFoundException('Note not found');
+    if (!noteId || !userId) {
+      throw new BadRequestException('Invalid request');
     }
+    if (!dto || Object.keys(dto).length === 0) {
+      throw new BadRequestException('Nothing to update');
+    }
+     const updateData: any={};
 
-    //always owner can update
-    if (note.user_id === userId) {
+     if(dto.title !== undefined){
+      if(!dto.title.trim()){
+        throw new BadRequestException('Title can not be empty');
+      }
+      updateData.title=dto.title.trim();
+     }
+
+     if(dto.content !==undefined){
+        if(!dto.content.trim()){
+          throw new BadRequestException('Content cannot be empty');
+        }
+        updateData.content=dto.content.trim();
+     }
+
+    //if the note available for current user who is owner will update 
+     const ownerNote=await this.prisma.notes.findFirst({
+      where:{
+        note_id:noteId,
+        user_id:userId,
+      },
+     });
+
+     if(ownerNote){
       return this.prisma.notes.update({
-        where: { note_id: noteId },
-        data: { ...dto }
+        where:{note_id:noteId},
+        data:{...updateData},
       });
-    }
+     }
+     
+     
+   
 
     //check shared person has edit access
     const sharedEditAccess = await this.prisma.request.findFirst({
@@ -284,8 +336,8 @@ export class NotesService {
     //shared user with edit permission
     return this.prisma.notes.update({
       where: { note_id: noteId },
-      data: { ...dto, }
-    })
+      data: { ...updateData, }
+    });
 
 
   }
@@ -293,6 +345,13 @@ export class NotesService {
 
   //Create Note
   async create(userId: string, dto: CreateNoteDto) {
+     if (!userId) {
+    throw new BadRequestException('Invalid user');
+  }
+
+  if (!dto.title?.trim() || !dto.content?.trim()) {
+    throw new BadRequestException('Title and content cannot be empty');
+  }
     return this.prisma.notes.create({
       data: {
         user_id: userId,
