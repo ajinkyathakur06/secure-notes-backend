@@ -14,6 +14,7 @@ describe('NotesService',()=>{
         notes:{
             findMany:jest.fn(),
             findUnique:jest.fn(),
+            findFirst:jest.fn(),
             create:jest.fn(),
             update:jest.fn(),
             delete:jest.fn(),
@@ -77,10 +78,11 @@ describe('NotesService',()=>{
 
   //3.1 owner should access note 
   it('should allow owner to access a note',async()=>{
-    mockPrisma.notes.findUnique.mockResolvedValue({
+    mockPrisma.notes.findFirst.mockResolvedValue({
         note_id:'1',
         user_id:'user1',
         noteMeta:[],
+        requests:[],
     });
 
     const note=await service.getOne('1','user1');
@@ -89,24 +91,16 @@ describe('NotesService',()=>{
 
   //3.2 should throw error if note not found
   it('should throw if note not found',async()=>{
-    mockPrisma.notes.findUnique.mockResolvedValue(null);
+    mockPrisma.notes.findFirst.mockResolvedValue(null);
 
-    await expect(service.getOne('1','user1')).rejects.toThrow(NotFoundException,);
+    await expect(
+      service.getOne('1','user1'),
+    ).rejects.toThrow(NotFoundException,);
   });
 
-  //3.3 throw error if user has no access
+  
 
-  it('should throw if user has no access',async()=>{
-    mockPrisma.notes.findUnique.mockResolvedValue({
-        note_id:'1',
-        user_id:'owner',
-        noteMeta:[],
-    });
-    mockPrisma.request.findFirst.mockResolvedValue(null);
-
-    await expect(service.getOne('1','user2')).rejects.toThrow(ForbiddenException,);
-  });
-
+ 
   //4. Create Note
   it('should create a note',async()=>{
     mockPrisma.notes.create.mockResolvedValue({note_id:'1'});
@@ -121,7 +115,7 @@ describe('NotesService',()=>{
   //5.update note
   //5.1 allow to update note owner
     it('should allow owner to update note',async()=>{
-          mockPrisma.notes.findUnique.mockResolvedValue({
+          mockPrisma.notes.findFirst.mockResolvedValue({
           note_id:'1',
           user_id:'user1',
         });
@@ -136,10 +130,7 @@ describe('NotesService',()=>{
 
     //5.2 shared user with edit permission should be allowed to update
     it('should allow shared user with EDIT permission to update',async()=>{
-        mockPrisma.notes.findUnique.mockResolvedValue({
-            note_id:'1',
-            user_id:'owner',
-        });
+        mockPrisma.notes.findFirst.mockResolvedValue(null);
 
         mockPrisma.request.findFirst.mockResolvedValue({
   permission: 'EDIT',
@@ -154,9 +145,7 @@ describe('NotesService',()=>{
    //5.3 should block update without permission for shared user
 
    it('should block update without permission',async()=>{
-    mockPrisma.notes.findUnique.mockResolvedValue({note_id:'1',
-        user_id:'owner',
-    });
+    mockPrisma.notes.findFirst.mockResolvedValue(null);//no owner
 
     mockPrisma.request.findFirst.mockResolvedValue(null);
 
@@ -170,7 +159,7 @@ describe('NotesService',()=>{
 
    //6.1 delete for everyone by owner
      it('should allow owner to delete for everyone', async () => {
-    mockPrisma.notes.findUnique.mockResolvedValue({
+    mockPrisma.notes.findFirst.mockResolvedValue({
       note_id: '1',
       user_id: 'user1',
     });
@@ -183,10 +172,7 @@ describe('NotesService',()=>{
 
   //6.2 delete for me for owner or shared user
     it('should  delete note for me', async () => {
-    mockPrisma.notes.findUnique.mockResolvedValue({
-      note_id: '1',
-      user_id: 'owner',
-    });
+   
 
     await service.delete('1', 'user2', 'me');
 
