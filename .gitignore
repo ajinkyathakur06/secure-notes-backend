@@ -24,5 +24,4 @@ lerna-debug.log*
 .tmp
 
 /generated/prisma
-
-/generated/prisma
+src/generated/
